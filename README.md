@@ -1,5 +1,5 @@
 # CDS-GAME
-notting
+
 import pygame
 import random
 
