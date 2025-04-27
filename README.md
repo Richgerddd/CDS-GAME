@@ -11,7 +11,7 @@ mixer.init()
 WIDTH = 800
 HEIGHT = 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Math Space Shooter")
+pygame.display.set_caption("Math Quiz in The space")
 
 # Colors
 WHITE = (255, 255, 255)
@@ -56,7 +56,7 @@ class Settings:
             self.alien_speed = 3
             self.spawn_rate = 60
 
-# Player class (same as before)
+# Player class
 class Player:
     def __init__(self):
         self.width = 50
@@ -76,7 +76,7 @@ class Player:
         if keys[pygame.K_RIGHT] and self.x < WIDTH - self.width:
             self.x += self.speed
 
-# Alien class (modified to use settings)
+# Alien class
 class Alien:
     def __init__(self, settings):
         self.width = 50
@@ -120,6 +120,9 @@ class Game:
         self.settings = Settings()
         self.spawn_timer = 0
         self.answer = ""
+        self.level = 1
+        self.enemies_defeated = 0
+        self.num_of_enemies = 4  # Starting with 4 enemies for level 1
         self.setup_buttons()
         
     def setup_buttons(self):
@@ -161,6 +164,12 @@ class Game:
         elif self.back_button.is_clicked(pos):
             self.__init__()
             
+    def check_level_up(self):
+        if self.enemies_defeated >= self.num_of_enemies:
+            self.level += 1
+            self.enemies_defeated = 0  # Reset enemy count for the new level
+            self.num_of_enemies = self.level + 3  # Increase the number of enemies based on the level
+
     def run(self):
         clock = pygame.time.Clock()
         
@@ -183,12 +192,16 @@ class Game:
                             for alien in self.aliens[:]:
                                 if abs(player_answer - alien.answer) < 0.01:
                                     self.aliens.remove(alien)
+                                    self.enemies_defeated += 1
                                     self.player.score += 10
                             self.answer = ""
                         except ValueError:
                             self.answer = ""
                     elif event.key == pygame.K_BACKSPACE:
                         self.answer = self.answer[:-1]
+                    elif event.key == pygame.K_MINUS:  # Allow input of negative sign
+                        if not self.answer.startswith('-'):  # Prevent multiple negative signs
+                            self.answer = '-' + self.answer
                     elif event.unicode.isnumeric() or event.unicode == '.':
                         self.answer += event.unicode
 
@@ -209,7 +222,8 @@ class Game:
                 
                 self.spawn_timer += 1
                 if self.spawn_timer >= self.settings.spawn_rate:
-                    self.aliens.append(Alien(self.settings))
+                    if len(self.aliens) < self.num_of_enemies:
+                        self.aliens.append(Alien(self.settings))
                     self.spawn_timer = 0
 
                 for alien in self.aliens[:]:
@@ -217,7 +231,10 @@ class Game:
                     alien.draw()
                     if alien.y > HEIGHT:
                         self.state = "game_over"
-                        
+                
+                # Check for level up
+                self.check_level_up()
+
                 score_text = pygame.font.Font(None, 36).render(f"Score: {self.player.score}", True, WHITE)
                 screen.blit(score_text, (10, 10))
                 answer_text = pygame.font.Font(None, 36).render(f"Answer: {self.answer}", True, WHITE)
@@ -238,4 +255,3 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.run()
-
